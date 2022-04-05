@@ -1,30 +1,23 @@
 use std::future::Future;
 use tokio::sync::mpsc;
 
-use crate::{Chan, Channel, Error, HasDual, i_want_static_future};
+use crate::{Chan, Channel, Error, HasDual};
 
 pub struct ChannelMpsc<T> {
     sx: mpsc::Sender<T>,
     rx: mpsc::Receiver<T>,
 }
 
-impl<T: 'static> ChannelMpsc<T> {
-    pub fn ss(self, t: T) -> impl Future<Output = Result<Self, Error>> {
+impl<T: Sync + Send + 'static> Channel for ChannelMpsc<T> {
+    type R = T;
+    type SendFuture<'a> = impl Future<Output = Result<(), Error>> + 'a
+    where
+        Self: 'a;
+    fn send(&mut self, t: Self::R) -> Self::SendFuture<'_> {
         async move {
             self.sx.send(t).await.map_err(|_| Error::SendErr)?;
-            Ok(self)
+            Ok(())
         }
-    }
-}
-
-impl<T: Sync + Send + 'static> Channel for ChannelMpsc<T> {
-    type SendFuture = impl Future<Output = Result<Self, Error>> + 'static;
-    type R = T;
-
-    fn send(self, t: T) -> Self::SendFuture {
-        let s = self;
-        let fut = s.ss(t);
-        i_want_static_future(fut)
     }
     type RecvFuture<'a> = impl Future<Output = Result<T, Error>>  + 'a where Self: 'a;
 

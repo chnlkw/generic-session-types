@@ -1,8 +1,5 @@
 use std::any::Any;
 
-#[repr(transparent)]
-pub struct DynMessage(Box<dyn Any + Send + Sync + 'static>);
-
 pub trait Repr<T>: Send + Sync + 'static
 where
     Self: Sized,
@@ -14,6 +11,10 @@ where
     /// Check whether the representation can be turned into this raw type, without consuming.
     fn can_into(&self) -> bool;
 }
+
+
+#[repr(transparent)]
+pub struct DynMessage(Box<dyn Any + Send + Sync + 'static>);
 
 /// We can turn anything into a `DynMessage`.
 impl<T: 'static + Send + Sync + Unpin> Repr<T> for DynMessage {

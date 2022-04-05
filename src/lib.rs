@@ -32,10 +32,10 @@ pub enum Error {
 
 pub trait Channel: Sized {
     type R;
-    type SendFuture: Future<Output = Result<Self, Error>> + 'static
+    type SendFuture<'a>: Future<Output = Result<(), Error>> + 'a
     where
-        Self: 'static;
-    fn send(self, t: Self::R) -> Self::SendFuture;
+        Self: 'a;
+    fn send(&mut self, t: Self::R) -> Self::SendFuture<'_>;
 
     type RecvFuture<'a>: Future<Output = Result<Self::R, Error>>
     where
@@ -57,14 +57,13 @@ where
     C::R: Repr<T> + 'static,
 {
     pub fn send(self, v: T) -> impl Future<Output = Result<Chan<P, C>, Error>> + 'static {
+        let mut c = self.0;
         let m = <C::R as Repr<T>>::from(v);
-        let fut = self.0.send(m);
-        let r = async move {
-            let c = fut.await?;
+        async move {
+            c.send(m).await?;
             let chan = Chan(c, PhantomData);
             Ok(chan)
-        };
-        i_want_static_future(r)
+        }
     }
 }
 
@@ -86,13 +85,6 @@ impl<C: Channel> Chan<Eps, C> {
         //TODO: call c.close()
         Ok(())
     }
-}
-
-pub fn i_want_static_future<F>(a: F) -> F
-where
-    F: Future + 'static,
-{
-    a
 }
 
 mod repr;
