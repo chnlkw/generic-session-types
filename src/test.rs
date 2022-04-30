@@ -80,3 +80,35 @@ async fn test_tokio_mpsc_channel2_dyn_message() {
     assert_eq!(r0, Ok(9));
     assert_eq!(r1, Ok(()));
 }
+
+type P3 = Choose<Send<u32, Eps>, Recv<String, Eps>>;
+
+#[tokio::test]
+async fn test_offer_choice() {
+    let (client, server) = mpsc::channel::<P3, BoxAnyRepr>(10);
+    let h1: JoinHandle<Result<(), Error>> = tokio::spawn(async move {
+        let s = client.left().await?;
+        let s = s.send(123).await?;
+        s.close().await?;
+        Ok(())
+    });
+    let h2: JoinHandle<Result<Vec<u32>, Error>> = tokio::spawn(async move {
+        let ret = match server.offer().await? {
+            Branch::Left(l) => {
+                let (data, s) = l.recv().await?;
+                s.close().await?;
+                vec![data]
+            }
+            Branch::Right(r) => {
+                let s = r.send("23".to_string()).await?;
+                s.close().await?;
+                vec![]
+            }
+        };
+        Ok(ret)
+    });
+    let r0 = h1.await.unwrap();
+    let r1 = h2.await.unwrap();
+    assert_eq!(r0, Ok(()));
+    assert_eq!(r1, Ok(vec![123]));
+}

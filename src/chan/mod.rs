@@ -50,6 +50,42 @@ where
     }
 }
 
+impl<P: HasDual, Q: HasDual, C: RawChan> Chan<Choose<P, Q>, C>
+where
+    C::R: Repr<bool>,
+{
+    pub async fn left(self) -> Result<Chan<P, C>, Error> {
+        let mut c = self.0;
+        c.send(<C::R as Repr<bool>>::from(false)).await?;
+        Ok(Chan(c, PhantomData))
+    }
+    pub async fn right(self) -> Result<Chan<Q, C>, Error> {
+        let mut c = self.0;
+        c.send(<C::R as Repr<bool>>::from(false)).await?;
+        Ok(Chan(c, PhantomData))
+    }
+}
+
+pub enum Branch<L, R> {
+    Left(L),
+    Right(R),
+}
+
+impl<P: HasDual, Q: HasDual, C: RawChan> Chan<Offer<P, Q>, C>
+where
+    C::R: Repr<bool>,
+{
+    pub async fn offer(self) -> Result<Branch<Chan<P, C>, Chan<Q, C>>, Error> {
+        let mut c = self.0;
+        let r = c.recv().await.map_err(|_| Error::RecvErr)?;
+        let b = repr::Repr::try_into(r).map_err(|_| Error::ConvertErr)?;
+        match b {
+            false => Ok(Branch::Left(Chan(c, PhantomData))),
+            true => Ok(Branch::Right(Chan(c, PhantomData))),
+        }
+    }
+}
+
 impl<C: RawChan> Chan<Eps, C> {
     pub async fn close(self) -> Result<(), Error> {
         //TODO: call c.close()
