@@ -5,7 +5,7 @@ pub struct Recv<T, P>(PhantomData<(T, P)>);
 pub struct Send<T, P>(PhantomData<(T, P)>);
 
 pub trait HasDual {
-    type Dual;
+    type Dual: HasDual;
 }
 
 impl HasDual for Eps {

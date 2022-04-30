@@ -1,53 +1,56 @@
 use crate::*;
 use std::{future::Future, marker::PhantomData};
 
-pub trait Channel<R> {
+pub trait RawChan {
+    type R;
     type SendFuture<'a>: Future<Output = Result<(), Error>> + 'a
     where
         Self: 'a;
-    fn send(&mut self, r: R) -> Self::SendFuture<'_>;
+    fn send(&mut self, r: Self::R) -> Self::SendFuture<'_>;
 
-    type RecvFuture<'a>: Future<Output = Result<R, Error>>
+    type RecvFuture<'a>: Future<Output = Result<Self::R, Error>>
     where
         Self: 'a;
     fn recv(&mut self) -> Self::RecvFuture<'_>;
 }
 
-pub struct Chan<P, R, C: Channel<R>>(C, PhantomData<(P, R)>);
+#[repr(transparent)]
+#[must_use]
+pub struct Chan<P: HasDual, C: RawChan>(C, PhantomData<P>);
 
-impl<P, R, C: Channel<R>> Chan<P, R, C> {
+impl<P: HasDual, C: RawChan> Chan<P, C> {
     pub fn new(c: C) -> Self {
         Self(c, PhantomData)
     }
 }
 
-impl<P, T, R: 'static, C: Channel<R>> Chan<Send<T, P>, R, C>
+impl<P: HasDual, T, C: RawChan> Chan<Send<T, P>, C>
 where
-    C: 'static,
-    R: Repr<T>,
+    C::R: Repr<T>,
 {
-    pub fn send(self, v: T) -> impl Future<Output = Result<Chan<P, R, C>, Error>> + 'static {
+    pub async fn send(self, t: T) -> Result<Chan<P, C>, Error> {
         let mut c = self.0;
-        let m = <R as Repr<T>>::from(v);
-        async move {
-            c.send(m).await?;
-            let chan = Chan(c, PhantomData);
-            Ok(chan)
-        }
-    }
-}
-
-impl<P, T, R: Repr<T>, C: Channel<R>> Chan<Recv<T, P>, R, C> {
-    pub async fn recv(self) -> Result<(T, Chan<P, R, C>), Error> {
-        let mut c = self.0;
-        let v: T = Repr::try_into(c.recv().await.map_err(|_| Error::RecvErr)?)
-            .map_err(|_| Error::ConvertErr)?;
+        let r = <C::R as Repr<T>>::from(t);
+        c.send(r).await?;
         let chan = Chan(c, PhantomData);
-        Ok((v, chan))
+        Ok(chan)
     }
 }
 
-impl<R, C: Channel<R>> Chan<Eps, R, C> {
+impl<P: HasDual, T, C: RawChan> Chan<Recv<T, P>, C>
+where
+    C::R: Repr<T>,
+{
+    pub async fn recv(self) -> Result<(T, Chan<P, C>), Error> {
+        let mut c = self.0;
+        let r = c.recv().await.map_err(|_| Error::RecvErr)?;
+        let t: T = repr::Repr::try_into(r).map_err(|_| Error::ConvertErr)?;
+        let chan = Chan(c, PhantomData);
+        Ok((t, chan))
+    }
+}
+
+impl<C: RawChan> Chan<Eps, C> {
     pub async fn close(self) -> Result<(), Error> {
         //TODO: call c.close()
         Ok(())
