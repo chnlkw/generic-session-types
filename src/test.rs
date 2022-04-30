@@ -1,7 +1,5 @@
 use tokio::task::JoinHandle;
 
-use crate::repr::JsonStringRepr;
-
 use super::*;
 
 type P1 = Send<String, Eps>;
@@ -41,7 +39,7 @@ type P2 = Send<String, Recv<usize, Eps>>;
 
 #[tokio::test]
 async fn test_tokio_mpsc_channel2() {
-    let (client, server) = mpsc::channel::<P2, JsonStringRepr>(10);
+    let (client, server) = mpsc::channel::<P2, BoxAnyRepr>(10);
     let msg = String::from("asdfsdfds");
     let h1: JoinHandle<Result<usize, Error>> = tokio::spawn(async move {
         let s = client.send(msg).await?;
@@ -63,7 +61,7 @@ async fn test_tokio_mpsc_channel2() {
 
 #[tokio::test]
 async fn test_tokio_mpsc_channel2_dyn_message() {
-    let (client, server) = mpsc::channel::<P2, DynMessage>(10);
+    let (client, server) = mpsc::channel::<P2, BoxAnyRepr>(10);
     let msg = String::from("asdfsdfds");
     let h1: JoinHandle<Result<usize, Error>> = tokio::spawn(async move {
         let s = client.send(msg).await?;
