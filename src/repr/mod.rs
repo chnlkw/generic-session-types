@@ -1,4 +1,4 @@
-pub trait Repr<T>: Send + Sync + 'static
+pub trait Repr<T>
 where
     Self: Sized,
 {
@@ -9,8 +9,6 @@ where
     /// Check whether the representation can be turned into this raw type, without consuming.
     fn can_into(&self) -> bool;
 }
-
-
 
 mod json_string_repr;
 pub use json_string_repr::*;

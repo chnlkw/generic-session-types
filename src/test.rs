@@ -25,7 +25,7 @@ where
 
 #[tokio::test]
 async fn test_tokio_mpsc_channel1() {
-    let (client, server) = mpsc::channel::<P1, JsonStringRepr>(10);
+    let (client, server) = mpsc::channel::<P1, BoxAnyRepr>(10);
     let msg = String::from("asdfsdfds");
     let h1: JoinHandle<Result<(), Error>> = tokio::spawn(run_client(client, msg));
     let h2: JoinHandle<Result<String, Error>> = tokio::spawn(run_server(server));
