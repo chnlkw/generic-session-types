@@ -18,7 +18,7 @@ async fn run_server<C: RawChan<R: Reprs /* associated type bounds */>>(
     Ok(s)
 }
 
-async fn run_client<C: RawChan<R: Reprs>>(client: Chan<P1, C>, msg: String) -> Result<(), Error> {
+async fn run_client(client: Chan<P1, impl RawChan<R: Reprs>>, msg: String) -> Result<(), Error> {
     let s = client.send(msg).await?;
     s.close().await?;
     Ok(())
