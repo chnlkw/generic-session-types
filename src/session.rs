@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-pub struct Eps;
+pub struct Close;
 pub struct Recv<T, P>(PhantomData<(T, P)>);
 pub struct Send<T, P>(PhantomData<(T, P)>);
 pub struct Choose<P, Q>(PhantomData<(P, Q)>);
@@ -10,8 +10,8 @@ pub trait HasDual {
     type Dual: HasDual;
 }
 
-impl HasDual for Eps {
-    type Dual = Eps;
+impl HasDual for Close {
+    type Dual = Close;
 }
 
 impl<T, P: HasDual> HasDual for Recv<T, P> {

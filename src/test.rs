@@ -2,7 +2,7 @@ use tokio::task::JoinHandle;
 
 use super::*;
 
-type P1 = Send<String, Eps>;
+type P1 = Send<String, Close>;
 type P1Dual = <P1 as HasDual>::Dual;
 
 async fn run_server<C: RawChan>(server: Chan<P1Dual, C>) -> Result<String, Error>
@@ -35,7 +35,7 @@ async fn test_tokio_mpsc_channel1() {
     assert_eq!(r1, Ok(String::from("asdfsdfds")));
 }
 
-type P2 = Send<String, Recv<usize, Eps>>;
+type P2 = Send<String, Recv<usize, Close>>;
 
 #[tokio::test]
 async fn test_tokio_mpsc_channel2() {
@@ -81,7 +81,7 @@ async fn test_tokio_mpsc_channel2_dyn_message() {
     assert_eq!(r1, Ok(()));
 }
 
-type P3 = Choose<Send<u32, Eps>, Recv<String, Eps>>;
+type P3 = Choose<Send<u32, Close>, Recv<String, Close>>;
 
 #[tokio::test]
 async fn test_offer_choice() {

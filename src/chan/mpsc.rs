@@ -27,6 +27,12 @@ impl<R: Sync + Send + 'static> RawChan for Mpsc<R> {
             Ok(data)
         }
     }
+
+    type CloseFuture = impl Future<Output = Result<(), Error>> + 'static;
+    fn close(self) -> Self::CloseFuture {
+        drop(self);
+        async { Ok(()) }
+    }
 }
 
 pub fn channel<P: HasDual, R: Sync + Send + 'static>(

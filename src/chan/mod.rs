@@ -12,6 +12,9 @@ pub trait RawChan {
     where
         Self: 'a;
     fn recv(&mut self) -> Self::RecvFuture<'_>;
+
+    type CloseFuture: Future<Output = Result<(), Error>> + 'static;
+    fn close(self) -> Self::CloseFuture;
 }
 
 #[repr(transparent)]
@@ -86,7 +89,7 @@ where
     }
 }
 
-impl<C: RawChan> Chan<Eps, C> {
+impl<C: RawChan> Chan<Close, C> {
     pub async fn close(self) -> Result<(), Error> {
         //TODO: call c.close()
         Ok(())
