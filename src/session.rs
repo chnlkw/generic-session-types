@@ -6,6 +6,12 @@ pub struct Send<T, P>(PhantomData<(T, P)>);
 pub struct Choose<P, Q>(PhantomData<(P, Q)>);
 pub struct Offer<P, Q>(PhantomData<(P, Q)>);
 
+pub trait Choose3: HasDual {
+    type T1: HasDual;
+    type T2: HasDual;
+    type T3: HasDual;
+}
+
 pub trait HasDual {
     type Dual: HasDual;
 }
