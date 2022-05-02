@@ -1,4 +1,5 @@
 #![feature(trait_alias)]
+#![feature(associated_type_bounds)]
 
 use tokio::task::JoinHandle;
 
@@ -7,21 +8,17 @@ use generic_session_types::*;
 type P1 = Send<String, Close>;
 type P1Dual = <P1 as HasDual>::Dual;
 
-trait Reprs = Repr<String> + Repr<u32>; // this is a trait alias
+trait Reprs = Repr<String> + Repr<u32>; // trait alias
 
-async fn run_server<C: RawChan>(server: Chan<P1Dual, C>) -> Result<String, Error>
-where
-    C::R: Reprs,
-{
+async fn run_server<C: RawChan<R: Reprs /* associated type bounds */>>(
+    server: Chan<P1Dual, C>,
+) -> Result<String, Error> {
     let (s, c) = server.recv().await?;
     c.close().await?;
     Ok(s)
 }
 
-async fn run_client<C: RawChan>(client: Chan<P1, C>, msg: String) -> Result<(), Error>
-where
-    C::R: Reprs,
-{
+async fn run_client<C: RawChan<R: Reprs>>(client: Chan<P1, C>, msg: String) -> Result<(), Error> {
     let s = client.send(msg).await?;
     s.close().await?;
     Ok(())
