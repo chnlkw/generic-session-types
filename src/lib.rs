@@ -17,6 +17,3 @@ pub enum Error {
 
 mod repr;
 pub use repr::*;
-
-#[cfg(test)]
-mod test;

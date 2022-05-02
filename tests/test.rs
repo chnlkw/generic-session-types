@@ -1,13 +1,17 @@
+#![feature(trait_alias)]
+
 use tokio::task::JoinHandle;
 
-use super::*;
+use generic_session_types::*;
 
 type P1 = Send<String, Close>;
 type P1Dual = <P1 as HasDual>::Dual;
 
+trait Reprs = Repr<String> + Repr<u32>; // this is a trait alias
+
 async fn run_server<C: RawChan>(server: Chan<P1Dual, C>) -> Result<String, Error>
 where
-    C::R: Repr<String>,
+    C::R: Reprs,
 {
     let (s, c) = server.recv().await?;
     c.close().await?;
@@ -16,7 +20,7 @@ where
 
 async fn run_client<C: RawChan>(client: Chan<P1, C>, msg: String) -> Result<(), Error>
 where
-    C::R: Repr<String>,
+    C::R: Reprs,
 {
     let s = client.send(msg).await?;
     s.close().await?;
