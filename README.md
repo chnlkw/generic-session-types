@@ -35,3 +35,9 @@ async fn test_tokio_mpsc_channel2_dyn_message() {
 
 * See more cases in [tests/]
 
+
+# Related work
+
+* [Munksgaard session-type](https://github.com/Munksgaard/session-type)
+
+* [Session Types for Rust](http://munksgaard.me/papers/laumann-munksgaard-larsen.pdf)
