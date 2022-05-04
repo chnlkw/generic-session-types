@@ -22,8 +22,11 @@ pub trait RawChan {
 pub struct Chan<P: HasDual, C: RawChan>(C, PhantomData<P>);
 
 impl<P: HasDual, C: RawChan> Chan<P, C> {
-    pub fn new(c: C) -> Self {
+    pub fn from_raw(c: C) -> Self {
         Self(c, PhantomData)
+    }
+    pub fn into_raw(self) -> C {
+        self.0
     }
 }
 
@@ -112,8 +115,7 @@ where
 
 impl<C: RawChan> Chan<Close, C> {
     pub async fn close(self) -> Result<(), Error> {
-        //TODO: call c.close()
-        Ok(())
+        self.0.close().await
     }
 }
 

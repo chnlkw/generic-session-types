@@ -42,5 +42,5 @@ pub fn channel<P: HasDual, R: Sync + Send + 'static>(
     let (sx1, rx1) = mpsc::channel(buffer);
     let c0 = Mpsc::<R> { sx: sx0, rx: rx1 };
     let c1 = Mpsc::<R> { sx: sx1, rx: rx0 };
-    (Chan::new(c0), Chan::new(c1))
+    (Chan::from_raw(c0), Chan::from_raw(c1))
 }
