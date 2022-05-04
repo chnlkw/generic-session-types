@@ -119,4 +119,25 @@ impl<C: RawChan> Chan<Close, C> {
     }
 }
 
+#[macro_export]
+macro_rules! send {
+    ( $c:ident, $msg:expr ) => {
+        let $c = $c.send($msg).await?;
+    };
+}
+
+#[macro_export]
+macro_rules! recv {
+    ( $c:ident, $msg:ident ) => {
+        let ($msg, $c) = $c.recv().await?;
+    };
+}
+
+#[macro_export]
+macro_rules! close {
+    ( $c:ident ) => {
+        $c.close().await?;
+    };
+}
+
 pub mod mpsc;
