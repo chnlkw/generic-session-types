@@ -2,7 +2,24 @@
 
 Generic session types in Rust for async send recv channel
 
+# Prerequisites
+
+* [Cargo](https://rustup.rs/)
+* Rust nightly
+```sh
+rustup default nightly
+```
+
 # Usage
+
+Add dependency to `Cargo.toml`
+```toml
+[dependencies]
+generic-session-types = { git = "https://github.com/chnlkw/generic-session-types.git" }
+
+```
+
+# Example
 
 ```rust
 
