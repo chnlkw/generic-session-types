@@ -33,11 +33,11 @@ async fn test_tokio_mpsc_channel2_dyn_message() {
 }
 ```
 
-* See more cases in [tests/]
+* See more cases in [tests](tests/)
 
 
-# Related work
+# References
 
-* [Munksgaard session-type](https://github.com/Munksgaard/session-type)
-
+* [Munksgaard session-type](https://github.com/Munksgaard/session-types)
+* [async-session-types](https://github.com/aakoshh/async-session-types-rs)
 * [Session Types for Rust](http://munksgaard.me/papers/laumann-munksgaard-larsen.pdf)

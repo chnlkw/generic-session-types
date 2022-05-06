@@ -1,5 +1,7 @@
 MIT License
 
+Copyright (c) 2015 Thomas Bracht Laumann Jespersen, Philip Munksgaard
+Copyright (c) 2022 The async-session-types-rs Developers
 Copyright (c) 2022 Li Kaiwei
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
