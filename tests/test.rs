@@ -11,14 +11,14 @@ type P1Dual = <P1 as HasDual>::Dual;
 trait Reprs = Repr<String> + Repr<u32>; // trait alias
 
 async fn run_server<C: RawChan<R: Reprs /* associated type bounds */>>(
-    server: Chan<P1Dual, C>,
+    server: Chan<P1Dual, (), C>,
 ) -> Result<String, Error> {
     let (s, c) = server.recv().await?;
     c.close().await?;
     Ok(s)
 }
 
-async fn run_client(client: Chan<P1, impl RawChan<R: Reprs>>, msg: String) -> Result<(), Error> {
+async fn run_client(client: Chan<P1, (), impl RawChan<R: Reprs>>, msg: String) -> Result<(), Error> {
     let s = client.send(msg).await?;
     s.close().await?;
     Ok(())

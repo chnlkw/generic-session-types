@@ -19,9 +19,9 @@ pub trait RawChan {
 
 #[repr(transparent)]
 #[must_use]
-pub struct Chan<P: HasDual, C: RawChan>(C, PhantomData<P>);
+pub struct Chan<P: HasDual, E, C: RawChan>(C, PhantomData<(P, E)>);
 
-impl<P: HasDual, C: RawChan> Chan<P, C> {
+impl<P: HasDual, E, C: RawChan> Chan<P, E, C> {
     pub fn from_raw(c: C) -> Self {
         Self(c, PhantomData)
     }
@@ -30,11 +30,11 @@ impl<P: HasDual, C: RawChan> Chan<P, C> {
     }
 }
 
-impl<P: HasDual, T, C: RawChan> Chan<Send<T, P>, C>
+impl<P: HasDual, E, T, C: RawChan> Chan<Send<T, P>, E, C>
 where
     C::R: Repr<T>,
 {
-    pub async fn send(self, t: T) -> Result<Chan<P, C>, Error> {
+    pub async fn send(self, t: T) -> Result<Chan<P, E, C>, Error> {
         let mut c = self.0;
         let r = <C::R as Repr<T>>::from(t);
         c.send(r).await?;
@@ -43,11 +43,11 @@ where
     }
 }
 
-impl<P: HasDual, T, C: RawChan> Chan<Recv<T, P>, C>
+impl<P: HasDual, E, T, C: RawChan> Chan<Recv<T, P>, E, C>
 where
     C::R: Repr<T>,
 {
-    pub async fn recv(self) -> Result<(T, Chan<P, C>), Error> {
+    pub async fn recv(self) -> Result<(T, Chan<P, E, C>), Error> {
         let mut c = self.0;
         let r = c.recv().await.map_err(|_| Error::RecvErr)?;
         let t: T = repr::Repr::try_into(r).map_err(|_| Error::ConvertErr)?;
@@ -56,37 +56,37 @@ where
     }
 }
 
-impl<C: RawChan, C3: Choose3> Chan<C3, C>
+impl<C: RawChan, E, C3: Choose3> Chan<C3, E, C>
 where
     C::R: Repr<u8>,
 {
-    pub async fn choose1(self) -> Result<Chan<C3::T1, C>, Error> {
+    pub async fn choose1(self) -> Result<Chan<C3::T1, E, C>, Error> {
         let mut c = self.0;
         c.send(<C::R as Repr<u8>>::from(1)).await?;
         Ok(Chan(c, PhantomData))
     }
-    pub async fn choose2(self) -> Result<Chan<C3::T2, C>, Error> {
+    pub async fn choose2(self) -> Result<Chan<C3::T2, E, C>, Error> {
         let mut c = self.0;
         c.send(<C::R as Repr<u8>>::from(2)).await?;
         Ok(Chan(c, PhantomData))
     }
-    pub async fn choose3(self) -> Result<Chan<C3::T3, C>, Error> {
+    pub async fn choose3(self) -> Result<Chan<C3::T3, E, C>, Error> {
         let mut c = self.0;
         c.send(<C::R as Repr<u8>>::from(3)).await?;
         Ok(Chan::from_raw(c))
     }
 }
 
-impl<P: HasDual, Q: HasDual, C: RawChan> Chan<Choose<P, Q>, C>
+impl<P: HasDual, Q: HasDual, E, C: RawChan> Chan<Choose<P, Q>, E, C>
 where
     C::R: Repr<bool>,
 {
-    pub async fn left(self) -> Result<Chan<P, C>, Error> {
+    pub async fn left(self) -> Result<Chan<P, E, C>, Error> {
         let mut c = self.0;
         c.send(<C::R as Repr<bool>>::from(false)).await?;
         Ok(Chan(c, PhantomData))
     }
-    pub async fn right(self) -> Result<Chan<Q, C>, Error> {
+    pub async fn right(self) -> Result<Chan<Q, E, C>, Error> {
         let mut c = self.0;
         c.send(<C::R as Repr<bool>>::from(false)).await?;
         Ok(Chan(c, PhantomData))
@@ -98,11 +98,11 @@ pub enum Branch<L, R> {
     Right(R),
 }
 
-impl<P: HasDual, Q: HasDual, C: RawChan> Chan<Offer<P, Q>, C>
+impl<P: HasDual, Q: HasDual, E, C: RawChan> Chan<Offer<P, Q>, E, C>
 where
     C::R: Repr<bool>,
 {
-    pub async fn offer(self) -> Result<Branch<Chan<P, C>, Chan<Q, C>>, Error> {
+    pub async fn offer(self) -> Result<Branch<Chan<P, E, C>, Chan<Q, E, C>>, Error> {
         let mut c = self.0;
         let r = c.recv().await.map_err(|_| Error::RecvErr)?;
         let b = repr::Repr::try_into(r).map_err(|_| Error::ConvertErr)?;
@@ -113,7 +113,28 @@ where
     }
 }
 
-impl<C: RawChan> Chan<Close, C> {
+impl<P: HasDual, E, C: RawChan> Chan<Rec<P>, E, C> {
+    pub fn rec(self) -> Chan<P, (P, E), C> {
+        Chan::from_raw(self.into_raw())
+    }
+}
+
+impl<P: HasDual, E, C: RawChan> Chan<Var<Z>, (P, E), C> {
+    pub fn zero(self) -> Chan<P, (P, E), C> {
+        Chan::from_raw(self.into_raw())
+    }
+}
+
+impl<P: HasDual, E, N, C: RawChan> Chan<Var<S<N>>, (P, E), C>
+where
+    Var<N>: HasDual,
+{
+    pub fn succ(self) -> Chan<Var<N>, E, C> {
+        Chan::from_raw(self.into_raw())
+    }
+}
+
+impl<C: RawChan, E> Chan<Close, E, C> {
     pub async fn close(self) -> Result<(), Error> {
         self.0.close().await
     }

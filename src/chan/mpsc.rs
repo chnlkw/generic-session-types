@@ -37,7 +37,7 @@ impl<R: Sync + Send + 'static> RawChan for Mpsc<R> {
 
 pub fn channel<P: HasDual, R: Sync + Send + 'static>(
     buffer: usize,
-) -> (Chan<P, Mpsc<R>>, Chan<P::Dual, Mpsc<R>>) {
+) -> (Chan<P, (), Mpsc<R>>, Chan<P::Dual, (), Mpsc<R>>) {
     let (sx0, rx0) = mpsc::channel(buffer);
     let (sx1, rx1) = mpsc::channel(buffer);
     let c0 = Mpsc::<R> { sx: sx0, rx: rx1 };

@@ -6,7 +6,10 @@ pub struct Recv<T, P>(PhantomData<(T, P)>);
 pub struct Send<T, P>(PhantomData<(T, P)>);
 pub struct Choose<P, Q>(PhantomData<(P, Q)>);
 pub struct Offer<P, Q>(PhantomData<(P, Q)>);
-
+pub struct Rec<P>(PhantomData<P>);
+pub struct Var<N>(PhantomData<N>);
+pub struct Z;
+pub struct S<N>(PhantomData<N>);
 pub trait Choose3: HasDual {
     type T1: HasDual;
     type T2: HasDual;
@@ -39,4 +42,16 @@ impl<P: HasDual, Q: HasDual> HasDual for Choose<P, Q> {
 
 impl<P: HasDual, Q: HasDual> HasDual for Offer<P, Q> {
     type Dual = Choose<P::Dual, Q::Dual>;
+}
+
+impl HasDual for Var<Z> {
+    type Dual = Var<Z>;
+}
+
+impl<N> HasDual for Var<S<N>> {
+    type Dual = Var<S<N>>;
+}
+
+impl<P: HasDual> HasDual for Rec<P> {
+    type Dual = Rec<P::Dual>;
 }

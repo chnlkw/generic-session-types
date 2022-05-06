@@ -32,21 +32,21 @@ impl Choose3 for Proto1 {
 impl HasDual for Proto1Dual {
     type Dual = Proto1;
 }
-trait Proto1ChanExt {
+trait Proto1ChanExt<E> {
     type C: RawChan;
-    type P1Future: Future<Output = Result<Chan<Send<u32, Close>, Self::C>, Error>> + 'static
+    type P1Future: Future<Output = Result<Chan<Send<u32, Close>, E, Self::C>, Error>> + 'static
     where
         Self: 'static;
     fn p1(self) -> Self::P1Future;
 }
 
-impl<C: RawChan> Proto1ChanExt for Chan<Proto1, C>
+impl<C: RawChan, E> Proto1ChanExt<E> for Chan<Proto1, E, C>
 where
     C::R: Repr<u8>,
 {
     type C = C;
 
-    type P1Future = impl Future<Output = Result<Chan<Send<u32, Close>, Self::C>, Error>> + 'static where Self:'static;
+    type P1Future = impl Future<Output = Result<Chan<Send<u32, Close>, E, Self::C>, Error>> + 'static where Self:'static;
     fn p1(self) -> Self::P1Future {
         let mut c = self.into_raw();
         async move {
@@ -56,27 +56,27 @@ where
     }
 }
 
-pub enum Proto1DualOffer<C: RawChan> {
-    P1(Chan<<Send<u32, Close> as HasDual>::Dual, C>),
-    P2(Chan<<Recv<String, Close> as HasDual>::Dual, C>),
-    P3(Chan<<Close as HasDual>::Dual, C>),
+pub enum Proto1DualOffer<E, C: RawChan> {
+    P1(Chan<<Send<u32, Close> as HasDual>::Dual, E, C>),
+    P2(Chan<<Recv<String, Close> as HasDual>::Dual, E, C>),
+    P3(Chan<<Close as HasDual>::Dual, E, C>),
 }
 
-trait Proto1DualChanExt {
+trait Proto1DualChanExt<E> {
     type C: RawChan;
-    type OfferFuture: Future<Output = Result<Proto1DualOffer<Self::C>, Error>> + 'static
+    type OfferFuture: Future<Output = Result<Proto1DualOffer<E, Self::C>, Error>> + 'static
     where
         Self: 'static;
     fn offer(self) -> Self::OfferFuture;
 }
 
-impl<C: RawChan> Proto1DualChanExt for Chan<Proto1Dual, C>
+impl<E, C: RawChan> Proto1DualChanExt<E> for Chan<Proto1Dual, E, C>
 where
     C::R: Repr<u8>,
 {
     type C = C;
 
-    type OfferFuture = impl Future<Output = Result<Proto1DualOffer<Self::C>, Error>> + 'static where Self:'static;
+    type OfferFuture = impl Future<Output = Result<Proto1DualOffer<E, Self::C>, Error>> + 'static where Self:'static;
     fn offer(self) -> Self::OfferFuture {
         let mut c = self.into_raw();
         async move {
@@ -91,7 +91,7 @@ where
 }
 /* end proc macro gen */
 
-async fn server(c: Chan<Proto1, impl RawChan<R = BoxAnyRepr> + 'static>) -> Result<(), Error> {
+async fn server(c: Chan<Proto1, (), impl RawChan<R = BoxAnyRepr> + 'static>) -> Result<(), Error> {
     let c = c.p1().await?;
     let c = c.send(1).await?;
     c.close().await?;
