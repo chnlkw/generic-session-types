@@ -71,7 +71,7 @@ where
         Ok(Chan(c, PhantomData))
     }
     pub async fn choose3(self) -> Result<Chan<C3::T3, C>, Error> {
-        let mut c = self.into_raw();
+        let mut c = self.0;
         c.send(<C::R as Repr<u8>>::from(3)).await?;
         Ok(Chan::from_raw(c))
     }
