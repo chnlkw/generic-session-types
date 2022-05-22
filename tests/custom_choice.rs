@@ -31,12 +31,6 @@ impl HasDual for Proto1 {
     type Dual = Proto1Dual;
 }
 
-impl Choose3 for Proto1 {
-    type T1 = Send<u32, Close>;
-    type T2 = Recv<String, Close>;
-    type T3 = Close;
-}
-
 impl HasDual for Proto1Dual {
     type Dual = Proto1;
 }

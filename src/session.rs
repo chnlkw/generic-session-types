@@ -10,11 +10,6 @@ pub struct Rec<P>(PhantomData<P>);
 pub struct Var<N>(PhantomData<N>);
 pub struct Z;
 pub struct S<N>(PhantomData<N>);
-pub trait Choose3: HasDual {
-    type T1: HasDual;
-    type T2: HasDual;
-    type T3: HasDual;
-}
 
 pub trait HasDual {
     type Dual: HasDual;

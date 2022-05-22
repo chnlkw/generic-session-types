@@ -56,27 +56,6 @@ where
     }
 }
 
-impl<C: RawChan, E, C3: Choose3> Chan<C3, E, C>
-where
-    C::R: Repr<u8>,
-{
-    pub async fn choose1(self) -> Result<Chan<C3::T1, E, C>, Error> {
-        let mut c = self.0;
-        c.send(<C::R as Repr<u8>>::from(1)).await?;
-        Ok(Chan(c, PhantomData))
-    }
-    pub async fn choose2(self) -> Result<Chan<C3::T2, E, C>, Error> {
-        let mut c = self.0;
-        c.send(<C::R as Repr<u8>>::from(2)).await?;
-        Ok(Chan(c, PhantomData))
-    }
-    pub async fn choose3(self) -> Result<Chan<C3::T3, E, C>, Error> {
-        let mut c = self.0;
-        c.send(<C::R as Repr<u8>>::from(3)).await?;
-        Ok(Chan::from_raw(c))
-    }
-}
-
 impl<P: HasDual, Q: HasDual, E, C: RawChan> Chan<Choose<P, Q>, E, C>
 where
     C::R: Repr<bool>,
