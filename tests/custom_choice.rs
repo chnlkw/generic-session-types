@@ -18,6 +18,14 @@ struct Proto1Dual {
     p2: <Recv<String, Close> as HasDual>::Dual,
     p3: <Close as HasDual>::Dual,
 }
+async fn p1<E, C: RawChan>(chan: Chan<Proto1, E, C>) -> Result<Chan<Send<u32, Close>, E, C>, Error>
+where
+    <C as generic_session_types::RawChan>::R: generic_session_types::Repr<u8>,
+{
+    let mut c = chan.into_raw();
+    c.send(<C::R as Repr<u8>>::from(1)).await?;
+    Ok(Chan::from_raw(c))
+}
 
 impl HasDual for Proto1 {
     type Dual = Proto1Dual;
@@ -62,21 +70,22 @@ pub enum Proto1DualOffer<E, C: RawChan> {
     P3(Chan<<Close as HasDual>::Dual, E, C>),
 }
 
-trait Proto1DualChanExt<E> {
-    type C: RawChan;
-    type OfferFuture: Future<Output = Result<Proto1DualOffer<E, Self::C>, Error>> + 'static
-    where
-        Self: 'static;
-    fn offer(self) -> Self::OfferFuture;
-}
+// trait Proto1DualChanExt<E> {
+//     type C: RawChan;
+//     type OfferFuture: Future<Output = Result<Proto1DualOffer<E, Self::C>, Error>> + 'static
+//     where
+//         Self: 'static;
+//     fn offer(self) -> Self::OfferFuture;
+// }
 
-impl<E, C: RawChan> Proto1DualChanExt<E> for Chan<Proto1Dual, E, C>
+impl<E, C: RawChan> OfferExt<Proto1Dual, E> for Chan<Proto1Dual, E, C>
 where
     C::R: Repr<u8>,
 {
     type C = C;
+    type OfferChan = Proto1DualOffer<E, Self::C>;
 
-    type OfferFuture = impl Future<Output = Result<Proto1DualOffer<E, Self::C>, Error>> + 'static where Self:'static;
+    type OfferFuture = impl Future<Output = Result<Self::OfferChan, Error>> + 'static where Self:'static;
     fn offer(self) -> Self::OfferFuture {
         let mut c = self.into_raw();
         async move {
@@ -84,6 +93,8 @@ where
             let t: u8 = Repr::try_into(r).map_err(|_| Error::ConvertErr)?;
             match t {
                 1 => Ok(Proto1DualOffer::P1(Chan::from_raw(c))),
+                2 => Ok(Proto1DualOffer::P2(Chan::from_raw(c))),
+                3 => Ok(Proto1DualOffer::P3(Chan::from_raw(c))),
                 _ => Err(Error::ConvertErr),
             }
         }

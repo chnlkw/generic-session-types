@@ -160,5 +160,88 @@ macro_rules! close {
         $c.close().await?;
     };
 }
+#[macro_export]
+macro_rules! choose_offer {
+    ( $choose:ident $offer:ident {
+        $($p:ident ( $t:ty ) $o:ident),+
+    } with $offerExt:ident) => {
+        struct $choose {
+        }
+
+        enum $offer {
+        }
+
+        impl HasDual for $choose { type Dual = $offer; }
+
+        impl HasDual for $offer { type Dual = $choose; }
+
+        choose_offer!($choose; 0; $($p($t)),*); // call def choose
+
+        choose_offer!($offer $offerExt; $($o < $t as HasDual>::Dual),*);
+    };
+
+    // def choose
+    ($choose:ident; $e:expr ; ) => {};
+    ($choose:ident; $e:expr ; $p:ident ($t:ty) $(, $ps:ident ($ts:ty) )* ) => {
+        async fn $p<E, C: RawChan>(chan: Chan< $choose, E, C>) -> Result< Chan< $t, E, C>, Error>
+        where
+            <C as $crate::RawChan>::R: $crate::Repr<u8>,
+        {
+            let mut c = chan.into_raw();
+            c.send(<C::R as Repr<u8>>::from($e)).await?;
+            Ok(Chan::from_raw(c))
+        }
+
+
+        choose_offer!($choose; $e + 1; $($ps ($ts)),* );
+    };
+
+    // def offer
+
+    (offer_body $ext:ident $t:ident $c:ident ; $e:expr ; ) => {
+            Err(Error::ConvertErr)
+    };
+    (offer_body $ext:ident $t:ident $c:ident ; $e:expr ; $p:ident $(, $ps:ident)* ) => {
+        if ($t == $e) {
+            Ok($ext::$p(Chan::from_raw($c)))
+        } else {
+            choose_offer!(offer_body $ext $t $c ; $e + 1 ; $( $ps ),*)
+        }
+    };
+
+    ($offer:ident $ext:ident; $($p:ident $t:ty),+) => {
+
+        pub enum $ext<E, C: RawChan> {
+            $( $p(Chan< $t, E, C>) ),*
+        }
+
+        impl<E, C: RawChan> OfferExt< $offer, E> for Chan< $offer, E, C>
+        where
+            C::R: Repr<u8>,
+        {
+            type C = C;
+            type OfferChan = $ext<E, Self::C>;
+
+            type OfferFuture = impl std::future::Future<Output = Result<Self::OfferChan, Error>> + 'static where Self:'static;
+            fn offer(self) -> Self::OfferFuture {
+                let mut c = self.into_raw();
+                async move {
+                    let r = c.recv().await.map_err(|_| Error::RecvErr)?;
+                    let t: u8 = Repr::try_into(r).map_err(|_| Error::ConvertErr)?;
+                    choose_offer!(offer_body $ext t c ; 0 ; $( $p ),* )
+                }
+            }
+        }
+    };
+}
+
+pub trait OfferExt<P: HasDual, E> {
+    type C: RawChan;
+    type OfferChan;
+    type OfferFuture: Future<Output = Result<Self::OfferChan, Error>> + 'static
+    where
+        Self: 'static;
+    fn offer(self) -> Self::OfferFuture;
+}
 
 pub mod mpsc;
