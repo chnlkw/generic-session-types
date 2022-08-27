@@ -67,7 +67,7 @@ where
     }
     pub async fn right(self) -> Result<Chan<Q, E, C>, Error> {
         let mut c = self.0;
-        c.send(<C::R as Repr<bool>>::from(false)).await?;
+        c.send(<C::R as Repr<bool>>::from(true)).await?;
         Ok(Chan(c, PhantomData))
     }
 }
