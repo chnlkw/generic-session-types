@@ -1,7 +1,6 @@
 #![feature(trait_alias)]
 #![feature(type_alias_impl_trait)]
 #![feature(associated_type_bounds)]
-#![feature(generic_associated_types)]
 
 use generic_session_types::*;
 
