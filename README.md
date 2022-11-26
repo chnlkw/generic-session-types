@@ -15,8 +15,7 @@ rustup default nightly
 Add dependency to `Cargo.toml`
 ```toml
 [dependencies]
-generic-session-types = { git = "https://github.com/chnlkw/generic-session-types.git" }
-
+generic-session-types = "0.1.0"
 ```
 
 # Example
