@@ -15,7 +15,7 @@ rustup default nightly
 Add dependency to `Cargo.toml`
 ```toml
 [dependencies]
-generic-session-types = "0.1.0"
+generic-session-types = "0.1.1"
 ```
 
 # Example

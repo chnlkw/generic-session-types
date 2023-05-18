@@ -1,6 +1,6 @@
 [package]
 name = "generic-session-types"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 description = "Generic session types in Rust for async send recv channel"
